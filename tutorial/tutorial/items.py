@@ -11,10 +11,10 @@ class Products(scrapy.Item):
     brand = scrapy.Field()
     name = scrapy.Field()
     description = scrapy.Field()
-    SKU = scrapy.Field()
-    UPC = scrapy.Field()
-    EAN = scrapy.Field()
-    MPN = scrapy.Field()
+    sku = scrapy.Field()
+    upc = scrapy.Field()
+    ean = scrapy.Field()
+    mpn = scrapy.Field()
 
 class Reviews(scrapy.Item):
     user = scrapy.Field() 
@@ -23,8 +23,8 @@ class Reviews(scrapy.Item):
     title = scrapy.Field()
     content = scrapy.Field()
     rating = scrapy.Field()
-    productName = scrapy.Field()
+    productname = scrapy.Field()
 
-class Categories(scrapy.Item):
-    categoryName = scrapy.Field()
-    productName = scrapy.Field()
+# class Categories(scrapy.Item):
+#     categoryname = scrapy.Field()
+#     productname = scrapy.Field()

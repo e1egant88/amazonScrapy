@@ -4,7 +4,7 @@ import string
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 import scrapy
-
+from tutorial.items import Products, Reviews
 
 class QuotesSpider(scrapy.Spider):
     name = "amazon"
@@ -59,26 +59,27 @@ class QuotesSpider(scrapy.Spider):
                 print('---no product in the category---')
 
     def parsePdct(self, response):
-        brand = response.xpath('//*[@class="a-spacing-small po-brand"]/td[@class="a-span9"]/span/text()').get()
+        product = Products()
+        product['brand'] = response.xpath('//*[@class="a-spacing-small po-brand"]/td[@class="a-span9"]/span/text()').get()
         name = response.xpath('//*[@id="productTitle"]/text()').get()
-        name = name.strip()
+        # remove space
+        product['name'] = name.strip()
         '''
         # replace name with tokens
         for i in string.punctuation:
             name = name.replace(i,'')
         name = nltk.word_tokenize(name)
         '''
-        description = ''
-        # SKU = None
-        # UPC = None
-        # EAN = None
+        product['description'] = response.xpath('//div[@class="a-section a-spacing-medium a-spacing-top-small"]/ul/li/span/text()').getall()
+        product['sku'] = 'None'
+        product['upc'] = 'None'
+        product['ean'] = 'None'
         MPN = response.xpath('//th[text()=" Item Model Number "]/following-sibling::td/text()').get()
         if MPN is not None:
-            MPN = ''.join(filter(str.isalnum,MPN))
+            product['mpn'] = ''.join(filter(str.isalnum,MPN))
         else:
-            #for test
-            MPN = 'abc'
-        #save
+            product['mpn'] = 'None'
+        #save to local file
         with open('products.txt','a') as f:
             f.write(name+'\n')
 
@@ -88,6 +89,7 @@ class QuotesSpider(scrapy.Spider):
 
         
     def parseReviews(self, response):
+        review = Reviews()
         divXpath = '//div[@class="a-section review aok-relative"]'
         div = response.xpath('//div[@class="a-section review aok-relative"]')
         if len(div) != 0:
@@ -96,15 +98,18 @@ class QuotesSpider(scrapy.Spider):
                 rating = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/i/span/text()').get()
                 if rating is not None:
                     rating = [e.strip() for e in rating]
-                    rating = int(rating[0])
-                user = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/div/span/text()').get()
+                    review['rating'] = int(rating[0])
+                review['user'] = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/div/span/text()').get()
                 date = response.xpath(divXpath+'[%d]'%d+'/div/div/span/text()').get()
                 if date is not None:
                     # parse date format
+                    review['date'] = ''
                     pass
-                platform = 'Amazon'
-                title = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/span[2]/text()').get()
-                content = response.xpath(divXpath+'[%d]'%d+'/div/div/div/span/span/text()').get()
+                review['platform'] = 'Amazon'
+                review['title'] = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/span[2]/text()').get()
+                review['content'] = content = response.xpath(divXpath+'[%d]'%d+'/div/div/div/span/span/text()').get()
+                productname = response.xpath('//div[@class="a-fixed-left-grid-col product-info a-col-right"]/div/h1/a/text()').get()
+                review['productname'] = productname.strip()
                 # save
                 with open('reviews.txt','a') as f:
                     f.write(content+'\n')
