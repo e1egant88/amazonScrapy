@@ -26,7 +26,5 @@ class Reviews(scrapy.Item):
     productName = scrapy.Field()
 
 class Categories(scrapy.Item):
-    department = scrapy.Field()
-    category = scrapy.Field()
-    subcategories = scrapy.Field()
+    categoryName = scrapy.Field()
     productName = scrapy.Field()
