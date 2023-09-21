@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 import nltk
 import string
@@ -6,6 +7,20 @@ nltk.download('averaged_perceptron_tagger')
 import scrapy
 from tutorial.items import Products, Reviews
 
+monthdic = {
+    "January" : '1',
+    "February" : '2',
+    "March" : '3',
+    "April" : '4',
+    "May" : '5',
+    "June" : '6',
+    "July" : '7',
+    "August" :'8',
+    "September" : '9',
+    "October"  : '10',
+    "November" : '11',
+    "December" : '12'
+}
 class QuotesSpider(scrapy.Spider):
     name = "amazon"
     def start_requests(self):
@@ -26,18 +41,23 @@ class QuotesSpider(scrapy.Spider):
 
     def parseCat(self, response):
         LvCatAfterSec = response.xpath('//*[@class="a-spacing-micro s-navigation-indent-2"]/span/a/@href').getall()
+        # Find all leaf categories
+        # if len(LvCatAfterSec) != 0:
+        #     # test with 1st LvCatAfterSec
+        #     for url in LvCatAfterSec[0:1]:
+        #         print('--------------------')
+        #         print(url)
+        #         yield response.follow(url, callback=self.parseCat)     
+        # else:
+        #     print('=======================')
+        #     currentUrl = response.request.url
+        #     print(currentUrl)
+        #     yield response.follow(currentUrl, callback=self.parseBottomCat)
         if len(LvCatAfterSec) != 0:
-            # test with 1st LvCatAfterSec
             for url in LvCatAfterSec[0:1]:
-                print('--------------------')
-                print(url)
-                yield response.follow(url, callback=self.parseCat)     
-        else:
-            print('=======================')
-            currentUrl = response.request.url
-            print(currentUrl)
-            yield response.follow(currentUrl, callback=self.parseBottomCat)
-
+                    print('--------------------')
+                    print(url)
+                    yield response.follow(url, callback=self.parseBottomCat)     
     def parseBottomCat(self, response):
         # secLvCat = response.xpath('//*[@class="a-spacing-micro s-navigation-indent-2"]/span/a/@href').getall()
         print("currURL: "+response.request.url)
@@ -51,6 +71,7 @@ class QuotesSpider(scrapy.Spider):
                     print(url)
                     yield response.follow(url, callback=self.parsePdct)
                 nextBtn = response.xpath('//*[@class="s-pagination-item s-pagination-next s-pagination-button s-pagination-separator"]/@href').get()
+                nextBtn = None
                 if nextBtn is not None:
                     yield response.follow(nextBtn, callback=self.parseBottomCat)
                 else:
@@ -59,6 +80,7 @@ class QuotesSpider(scrapy.Spider):
                 print('---no product in the category---')
 
     def parsePdct(self, response):
+        
         product = Products()
         product['brand'] = response.xpath('//*[@class="a-spacing-small po-brand"]/td[@class="a-span9"]/span/text()').get()
         name = response.xpath('//*[@id="productTitle"]/text()').get()
@@ -70,7 +92,9 @@ class QuotesSpider(scrapy.Spider):
             name = name.replace(i,'')
         name = nltk.word_tokenize(name)
         '''
-        product['description'] = response.xpath('//div[@class="a-section a-spacing-medium a-spacing-top-small"]/ul/li/span/text()').getall()
+        # About this item as the description
+        descriptions = response.xpath('//div[@class="a-section a-spacing-medium a-spacing-top-small"]/ul/li/span/text()').getall()
+        product['description'] = ','.join(descriptions)
         product['sku'] = 'None'
         product['upc'] = 'None'
         product['ean'] = 'None'
@@ -82,6 +106,7 @@ class QuotesSpider(scrapy.Spider):
         #save to local file
         with open('products.txt','a') as f:
             f.write(name+'\n')
+        yield product
 
         seeMoreBtn = response.xpath('//a[@class="a-link-emphasis a-text-bold"]/@href').get()
         if seeMoreBtn is not None:
@@ -98,12 +123,17 @@ class QuotesSpider(scrapy.Spider):
                 rating = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/i/span/text()').get()
                 if rating is not None:
                     rating = [e.strip() for e in rating]
-                    review['rating'] = int(rating[0])
+                    review['rating'] = rating[0]
                 review['user'] = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/div/span/text()').get()
                 date = response.xpath(divXpath+'[%d]'%d+'/div/div/span/text()').get()
                 if date is not None:
                     # parse date format
-                    review['date'] = ''
+                    dt = date.split()[-3:]
+                    day = dt[0]
+                    month = monthdic[dt[1]]
+                    year = dt[2]
+                    # review['date'] = datetime.datetime(int(year),int(month),int(day))
+                    review['date'] = year+'-'+month+'-'+day
                     pass
                 review['platform'] = 'Amazon'
                 review['title'] = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/span[2]/text()').get()
@@ -113,6 +143,8 @@ class QuotesSpider(scrapy.Spider):
                 # save
                 with open('reviews.txt','a') as f:
                     f.write(content+'\n')
+                yield review
             nextPageBtn = response.xpath('//li[class="a-last"]/a/@href').get()
+            nextPageBtn = None
             if nextPageBtn is not None:
                 yield response.follow(nextPageBtn, callback=self.parseReviews)

@@ -84,7 +84,7 @@ class TutorialPipeline:
             if result:
                 spider.logger.warn('Review already in db: %s' %item['title'])
             else:
-                self.cur.execute("""insert into reviews (user, date, platform, title, content, rating, productname) values (%s,'%Y-%m-%d',%s,%s,%s,%d,%s)""",(
+                self.cur.execute("""insert into reviews (user, date, platform, title, content, rating, productname) values (%s,'%s',%s,%s,%s,%s,%s)""",(
                     item["user"],
                     item["date"],
                     item["platform"],
