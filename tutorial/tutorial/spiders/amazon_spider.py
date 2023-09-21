@@ -132,8 +132,8 @@ class QuotesSpider(scrapy.Spider):
                     day = dt[0]
                     month = monthdic[dt[1]]
                     year = dt[2]
-                    # review['date'] = datetime.datetime(int(year),int(month),int(day))
-                    review['date'] = year+'-'+month+'-'+day
+                    review['date'] = datetime.datetime(int(year),int(month),int(day))
+                    # review['date'] = year+'-'+month+'-'+day
                     pass
                 review['platform'] = 'Amazon'
                 review['title'] = response.xpath(divXpath+'[%d]'%d+'/div/div/div/a/span[2]/text()').get()
